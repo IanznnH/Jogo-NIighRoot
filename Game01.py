@@ -82,10 +82,10 @@ def process_input(window, delta_time):
 def draw_ground():
     glColor3f(0.0, 0.2, 0.0)  # verde
     glBegin(GL_QUADS)
-    glVertex3f(-50, 0, -50)
-    glVertex3f(-50, 0, 50)
-    glVertex3f(50, 0, 50)
-    glVertex3f(50, 0, -50)
+    glVertex3f(-25, 0, -25)
+    glVertex3f(-25, 0, 25)
+    glVertex3f(25, 0, 25)
+    glVertex3f(25, 0, -25)
     glEnd()
     
 rock_positions = []
@@ -126,6 +126,55 @@ def draw_tree(x=0, z=0, height=2.0, scale=2.0):
         glScalef(layer_scale * scale, leaves_height/3, layer_scale * scale)
         draw_cube(0, 0, 0)
         glPopMatrix()
+def draw_sky():
+    glDisable(GL_DEPTH_TEST)  # Desativa o depth test para o céu ser desenhado por trás de tudo
+    glPushMatrix()
+    
+    # Posiciona o céu ao redor da câmera
+    glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])
+    
+    size = 10  # Tamanho do skybox
+    
+    glBegin(GL_QUADS)
+    
+    # Face frontal (Z negativo)
+    glColor3f(0.3, 0.5, 0.9)
+    glVertex3f(-size, -size, -size)
+    glVertex3f(size, -size, -size)
+    glVertex3f(size, size, -size)
+    glVertex3f(-size, size, -size)
+    
+    # Face traseira (Z positivo)
+    glColor3f(0.3, 0.5, 0.9)
+    glVertex3f(-size, -size, size)
+    glVertex3f(size, -size, size)
+    glVertex3f(size, size, size)
+    glVertex3f(-size, size, size)
+    
+    # Face esquerda (X negativo)
+    glColor3f(0.3, 0.5, 0.9)
+    glVertex3f(-size, -size, -size)
+    glVertex3f(-size, -size, size)
+    glVertex3f(-size, size, size)
+    glVertex3f(-size, size, -size)
+    
+    # Face direita (X positivo)
+    glColor3f(0.3, 0.5, 0.9)
+    glVertex3f(size, -size, -size)
+    glVertex3f(size, -size, size)
+    glVertex3f(size, size, size)
+    glVertex3f(size, size, -size)
+    
+    # Face superior (Y positivo - céu)
+    glColor3f(0.3, 0.5, 0.9)  
+    glVertex3f(-size, size, -size)
+    glVertex3f(size, size, -size)
+    glVertex3f(size, size, size)
+    glVertex3f(-size, size, size)
+    
+    glEnd()
+    glPopMatrix()
+    glEnable(GL_DEPTH_TEST)  # Reativa o depth test
     
 def draw_cube(x, y, z, size=1):
     glPushMatrix()
@@ -246,9 +295,11 @@ def main():
         gluLookAt(cam_pos[0], cam_pos[1], cam_pos[2],
                   center[0], center[1], center[2],
                   cam_up[0], cam_up[1], cam_up[2])
-
+        
+        draw_sky()
+        
         draw_ground()  # Chão verde
-        random.seed(42)  # Para manter o mesmo layout sempre
+        random.seed(60)  # Para manter o mesmo layout sempre
         for _ in range(150):
             x = random.uniform(-20, 20)
             z = random.uniform(-20, 20)
