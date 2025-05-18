@@ -20,24 +20,40 @@ ultimo_x, ultimo_y = LARGURA//2, ALTURA//2
 primeiro_mouse = True
 keys = {}
 
-def mouse_callback(window, xpos, ypos):
-    global yaw, pitch, ultimo_x, ultimo_y, primeiro_mouse, cam_front
+def key_callback(window, key, scancode, action, mods):
+    global keys
+    
+    if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
+        glfw.set_window_should_close(window, True)
+    
+    # Adicione as setas direcionais
+    if key in [glfw.KEY_UP, glfw.KEY_DOWN, glfw.KEY_LEFT, glfw.KEY_RIGHT, 
+               glfw.KEY_W, glfw.KEY_A, glfw.KEY_S, glfw.KEY_D]:
+        if action == glfw.PRESS:
+            keys[key] = True
+        elif action == glfw.RELEASE:
+            keys[key] = False
 
-    if primeiro_mouse:
-        ultimo_x, ultimo_y = xpos, ypos
-        primeiro_mouse = False
-
-    xoffset = xpos - ultimo_x
-    yoffset = ultimo_y - ypos 
-    ultimo_x, ultimo_y = xpos, ypos
-
-    xoffset *= SENSIBILIDADE
-    yoffset *= SENSIBILIDADE
-
-    yaw += xoffset
-    pitch += yoffset
+def process_input(window, delta_time):
+    global cam_pos, yaw, pitch
+    
+    velocity = speed * delta_time
+    rot_speed = 50 * delta_time  # Velocidade de rotação
+    
+    # Rotação com setas
+    if keys.get(glfw.KEY_LEFT, False):
+        yaw -= rot_speed
+    if keys.get(glfw.KEY_RIGHT, False):
+        yaw += rot_speed
+    if keys.get(glfw.KEY_UP, False):
+        pitch += rot_speed
+    if keys.get(glfw.KEY_DOWN, False):
+        pitch -= rot_speed
+    
+    # Limita o pitch
     pitch = max(-89.0, min(89.0, pitch))
-
+    
+    # Atualiza a direção da câmera
     front = [
         math.cos(math.radians(yaw)) * math.cos(math.radians(pitch)),
         math.sin(math.radians(pitch)),
@@ -45,19 +61,7 @@ def mouse_callback(window, xpos, ypos):
     ]
     cam_front[:] = front / np.linalg.norm(front)
     
-def key_callback(window, key, scancode, action, mods):
-    global keys
-
-    if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
-        glfw.set_window_should_close(window, True)
-    if action == glfw.PRESS:
-        keys[key] = True
-    elif action == glfw.RELEASE:
-        keys[key] = False
-
-def process_input(window, delta_time):
-    global cam_pos
-    velocity = speed * delta_time
+    # Movimento WASD (mantido)
     right = np.cross(cam_front, cam_up)
     right = right / np.linalg.norm(right)
 
@@ -73,11 +77,8 @@ def process_input(window, delta_time):
     
     cam_pos[0] += move_dir[0]
     cam_pos[2] += move_dir[2]
+    cam_pos[1] = PLAYER_HEIGHT
     
-    cam_pos[1] = PLAYER_HEIGHT 
-
-cam_pos = np.array([0.0, PLAYER_HEIGHT, 5.0], dtype=np.float32)
-
 def draw_ground():
     glColor3f(0.0, 0.2, 0.0)  # verde
     glBegin(GL_QUADS)
@@ -220,11 +221,10 @@ def main():
 
     glfw.make_context_current(window)
     glfw.set_key_callback(window, key_callback)
-    glfw.set_cursor_pos_callback(window, mouse_callback)
-    glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
+    glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_NORMAL)
     
     glEnable(GL_DEPTH_TEST)
-
+ 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(45, 2560/1440, 0.1, 100.0)
