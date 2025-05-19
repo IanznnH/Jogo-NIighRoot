@@ -98,7 +98,7 @@ def draw_small_rock(x=0, z=0):
     draw_cube(0, 0, 0)
     glPopMatrix()
 
-def generate_small_rocks(count=100, spread=10):
+def generate_small_rocks(count=500, spread=20):
     rock_positions = []
     for _ in range(count):
         x = random.uniform(-spread, spread)
@@ -206,6 +206,12 @@ def draw_cube(x, y, z, size=1):
     glVertex3f(0.5, -0.5, 0.5)
     glVertex3f(0.5, 0.5, 0.5)
     glVertex3f(0.5, 0.5, -0.5)
+    
+    #Superior
+    glVertex3f(-0.5, 0.5, -0.5)
+    glVertex3f(0.5, 0.5, -0.5)
+    glVertex3f(0.5, 0.5, 0.5)
+    glVertex3f(-0.5, 0.5, 0.5)
     
     
 
