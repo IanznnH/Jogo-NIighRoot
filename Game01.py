@@ -207,18 +207,8 @@ def draw_cube(x, y, z, size=1):
     glVertex3f(0.5, 0.5, 0.5)
     glVertex3f(0.5, 0.5, -0.5)
     
-    # Topo
-    glVertex3f(-0.5, 0.5, -0.5)
-    glVertex3f(-0.5, 0.5, 0.5)
-    glVertex3f(0.5, 0.5, 0.5)
-    glVertex3f(0.5, 0.5, -0.5)
     
-    # Fundo
-    glVertex3f(-0.5, -0.5, -0.5)
-    glVertex3f(-0.5, -0.5, 0.5)
-    glVertex3f(0.5, -0.5, 0.5)
-    glVertex3f(0.5, -0.5, -0.5)
-    
+
     glEnd()
     glPopMatrix()
     
