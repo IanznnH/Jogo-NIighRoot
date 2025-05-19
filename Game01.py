@@ -106,67 +106,68 @@ def generate_small_rocks(count=100, spread=10):
         rock_positions.append((x, z))
     return rock_positions
     
-def draw_tree(x=0, z=0, height=2.0, scale=2.0):
-    trunk_height = height * 0.4  
-    glColor3f(0.24, 0.17, 0.12)  # marrom
-    # Desenha o tronco 
+def draw_tree(x=0, z=0):
+    # Dimensões fixas
+    trunk_height = 0.8
+    trunk_width = 0.2
+    
+    # Tronco (marrom)
+    glColor3f(0.24, 0.17, 0.12)
     glPushMatrix()
-    glTranslatef(x, trunk_height/2, z)  
-    glScalef(0.3 * scale, trunk_height, 0.3 * scale)
+    glTranslatef(x, trunk_height/2, z)
+    glScalef(trunk_width, trunk_height, trunk_width)
     draw_cube(0, 0, 0)
     glPopMatrix()
-
-    leaves_height = height * 1.0  
-    for i in range(4):
-        layer_height = trunk_height + (i * leaves_height/3)
-        layer_scale = 1.5 - i * 0.4  
-        glColor3f(0, 0.39, 0)  # verde
+    
+    # Copa em 3 camadas decrescentes (verde)
+    glColor3f(0.0, 0.39, 0.0)
+    for i in range(3):
+        layer_size = 1.2 - i*0.3  # Tamanho decrescente
+        layer_height = trunk_height + i*0.5
         glPushMatrix()
-        glTranslatef(x, layer_height + (leaves_height/6), z) 
-        glScalef(layer_scale * scale, leaves_height/3, layer_scale * scale)
+        glTranslatef(x, layer_height, z)
+        glScalef(layer_size, 0.5, layer_size)  # Achatado verticalmente
         draw_cube(0, 0, 0)
         glPopMatrix()
+        
 def draw_sky():
     glDisable(GL_DEPTH_TEST)  # Desativa o depth test para o céu ser desenhado por trás de tudo
     glPushMatrix()
-    
     # Posiciona o céu ao redor da câmera
     glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])
-    
     size = 10  # Tamanho do skybox
-    
     glBegin(GL_QUADS)
     
     # Face frontal (Z negativo)
-    glColor3f(0.3, 0.5, 0.9)
+    glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, -size)
     glVertex3f(size, -size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(-size, size, -size)
     
     # Face traseira (Z positivo)
-    glColor3f(0.3, 0.5, 0.9)
+    glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
     
     # Face esquerda (X negativo)
-    glColor3f(0.3, 0.5, 0.9)
+    glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, -size)
     glVertex3f(-size, -size, size)
     glVertex3f(-size, size, size)
     glVertex3f(-size, size, -size)
     
     # Face direita (X positivo)
-    glColor3f(0.3, 0.5, 0.9)
+    glColor3f(0.1, 0.1, 0.44)
     glVertex3f(size, -size, -size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(size, size, -size)
     
     # Face superior (Y positivo - céu)
-    glColor3f(0.3, 0.5, 0.9)  
+    glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(size, size, size)
@@ -299,13 +300,13 @@ def main():
         draw_sky()
         
         draw_ground()  # Chão verde
-        random.seed(60)  # Para manter o mesmo layout sempre
+        random.seed(42)  # Para manter o mesmo layout sempre
         for _ in range(150):
             x = random.uniform(-20, 20)
             z = random.uniform(-20, 20)
             height = random.uniform(1.5, 3.0)
             scale = random.uniform(1.0, 1.2)
-            draw_tree(x, z, height, scale)
+            draw_tree(x, z)
             
         small_rocks = generate_small_rocks()  # Gera 100 pedrinhas
         
