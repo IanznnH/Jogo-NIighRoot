@@ -5,13 +5,12 @@ import numpy as np
 import random
 import math
 
-# Configurações - use a resolução que realmente vai usar
+# Configurações da minha resolução
 LARGURA, ALTURA = 2560, 1440
 PLAYER_HEIGHT = 0.5
 VELOCIDADE = 3.0
 SENSIBILIDADE = 0.1
 
-# Estado da câmera
 cam_pos = np.array([0.0, PLAYER_HEIGHT, 5.0], dtype=np.float32)
 cam_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 cam_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
@@ -19,28 +18,26 @@ yaw, pitch,speed = -90.0, 0.0, 3.0
 ultimo_x, ultimo_y = LARGURA//2, ALTURA//2
 primeiro_mouse = True
 keys = {}
-
+#Precionar ESC para sair do jogo
 def key_callback(window, key, scancode, action, mods):
     global keys
     
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, True)
     
-    # Adicione as setas direcionais
     if key in [glfw.KEY_UP, glfw.KEY_DOWN, glfw.KEY_LEFT, glfw.KEY_RIGHT, 
                glfw.KEY_W, glfw.KEY_A, glfw.KEY_S, glfw.KEY_D]:
         if action == glfw.PRESS:
             keys[key] = True
         elif action == glfw.RELEASE:
             keys[key] = False
-
-def process_input(window, delta_time):
+            
+def process_input(window, delta_time): #Função para processar a entrada do teclado
     global cam_pos, yaw, pitch
-    
+#O yaw é a rotação em torno do eixo Y e o pitch é a rotação em torno do eixo X   
     velocity = speed * delta_time
-    rot_speed = 50 * delta_time  # Velocidade de rotação
+    rot_speed = 50 * delta_time 
     
-    # Rotação com setas
     if keys.get(glfw.KEY_LEFT, False):
         yaw -= rot_speed
     if keys.get(glfw.KEY_RIGHT, False):
@@ -50,18 +47,15 @@ def process_input(window, delta_time):
     if keys.get(glfw.KEY_DOWN, False):
         pitch -= rot_speed
     
-    # Limita o pitch
     pitch = max(-89.0, min(89.0, pitch))
-    
-    # Atualiza a direção da câmera
+# Atualiza a posição da câmera com base no yaw e pitch
     front = [
         math.cos(math.radians(yaw)) * math.cos(math.radians(pitch)),
         math.sin(math.radians(pitch)),
         math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
     ]
     cam_front[:] = front / np.linalg.norm(front)
-    
-    # Movimento WASD (mantido)
+# Atualiza a posição da câmera com base na frente e no vetor up  
     right = np.cross(cam_front, cam_up)
     right = right / np.linalg.norm(right)
 
@@ -74,11 +68,13 @@ def process_input(window, delta_time):
         move_dir -= right * velocity
     if keys.get(glfw.KEY_D, False):
         move_dir += right * velocity
-    
+# Atualiza a posição da câmera
+# Limita a movimentação da câmera ao eixo Y 
     cam_pos[0] += move_dir[0]
     cam_pos[2] += move_dir[2]
     cam_pos[1] = PLAYER_HEIGHT
-    
+
+#Desenha o chão verde    
 def draw_ground():
     glColor3f(0.0, 0.2, 0.0)  # verde
     glBegin(GL_QUADS)
@@ -87,9 +83,8 @@ def draw_ground():
     glVertex3f(25, 0, 25)
     glVertex3f(25, 0, -25)
     glEnd()
-    
-rock_positions = []
 
+#Desenha as pedrinhas em cima do chão   
 def draw_small_rock(x=0, z=0):
     glPushMatrix()
     glTranslatef(x, 0, z)
@@ -97,76 +92,74 @@ def draw_small_rock(x=0, z=0):
     glColor3f(0.41, 0.41, 0.41)  # cinza
     draw_cube(0, 0, 0)
     glPopMatrix()
-
-def generate_small_rocks(count=500, spread=20):
+#Gera as pedrinhas em posições aleatórias
+#Count é o número de pedrinhas e spread é a distância máxima do centro
+def generate_small_rocks(count=500, spread=10):
     rock_positions = []
     for _ in range(count):
         x = random.uniform(-spread, spread)
         z = random.uniform(-spread, spread)
         rock_positions.append((x, z))
     return rock_positions
-    
+#Desenha as árvores em cima do chão   
 def draw_tree(x=0, z=0):
-    # Dimensões fixas
     trunk_height = 0.8
     trunk_width = 0.2
+    crown_size = 1.2  # Tamanho da copa
     
     # Tronco (marrom)
-    glColor3f(0.24, 0.17, 0.12)
+    glColor3f(0.24, 0.17, 0.12)  # Marrom
     glPushMatrix()
     glTranslatef(x, trunk_height/2, z)
     glScalef(trunk_width, trunk_height, trunk_width)
     draw_cube(0, 0, 0)
     glPopMatrix()
     
-    # Copa em 3 camadas decrescentes (verde)
+    # Copa (verde)
     glColor3f(0.0, 0.39, 0.0)
-    for i in range(3):
-        layer_size = 1.2 - i*0.3  # Tamanho decrescente
-        layer_height = trunk_height + i*0.5
-        glPushMatrix()
-        glTranslatef(x, layer_height, z)
-        glScalef(layer_size, 0.5, layer_size)  # Achatado verticalmente
-        draw_cube(0, 0, 0)
-        glPopMatrix()
+    glPushMatrix()
+    glTranslatef(x, trunk_height + 0.5, z) 
+    glScalef(crown_size, crown_size, crown_size)
+    draw_cube(0, 0, 0)
+    glPopMatrix()
         
 def draw_sky():
-    glDisable(GL_DEPTH_TEST)  # Desativa o depth test para o céu ser desenhado por trás de tudo
+    glDisable(GL_DEPTH_TEST) 
     glPushMatrix()
     # Posiciona o céu ao redor da câmera
     glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])
-    size = 10  # Tamanho do skybox
+    size = 10
     glBegin(GL_QUADS)
     
-    # Face frontal (Z negativo)
+    # Face frontal 
     glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, -size)
     glVertex3f(size, -size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(-size, size, -size)
     
-    # Face traseira (Z positivo)
+    # Face traseira
     glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
     
-    # Face esquerda (X negativo)
+    # Face da esquerda 
     glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, -size, -size)
     glVertex3f(-size, -size, size)
     glVertex3f(-size, size, size)
     glVertex3f(-size, size, -size)
     
-    # Face direita (X positivo)
+    # Face da direita 
     glColor3f(0.1, 0.1, 0.44)
     glVertex3f(size, -size, -size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(size, size, -size)
     
-    # Face superior (Y positivo - céu)
+    #Céu
     glColor3f(0.1, 0.1, 0.44)
     glVertex3f(-size, size, -size)
     glVertex3f(size, size, -size)
@@ -215,7 +208,7 @@ def draw_cube(x, y, z, size=1):
     
     glEnd()
     glPopMatrix()
-
+       
 def main():
     global LARGURA, ALTURA
     if not glfw.init():
@@ -223,10 +216,10 @@ def main():
         return
     
     glfw.window_hint(glfw.SAMPLES, 4)
-    window = glfw.create_window(LARGURA,ALTURA, "Floresta 3D", None, None)
+    window = glfw.create_window(LARGURA,ALTURA, "NIGHTROOT", None, None)
     if not window:
         glfw.terminate()
-        print("Erro ao criar janela GLFW")
+        print("Erro janela GLFW")
         return
 
     glfw.make_context_current(window)
@@ -257,10 +250,10 @@ def main():
                   center[0], center[1], center[2],
                   cam_up[0], cam_up[1], cam_up[2])
         
-        draw_sky()
+        draw_sky() # Céu azul
         
         draw_ground()  # Chão verde
-        random.seed(42)  # Para manter o mesmo layout sempre
+        random.seed(100)  #Para garantir a mesma posição das árvores e pedrinhas
         for _ in range(150):
             x = random.uniform(-20, 20)
             z = random.uniform(-20, 20)
@@ -268,11 +261,9 @@ def main():
             scale = random.uniform(1.0, 1.2)
             draw_tree(x, z)
             
-        small_rocks = generate_small_rocks()  # Gera 100 pedrinhas
-        
+        small_rocks = generate_small_rocks() #Chama a função para gerar as pedrinhas
         for pos in small_rocks:
-            draw_small_rock(pos[0], pos[1])
-
+            draw_small_rock(pos[0], pos[1]) # Desenha as pedrinhas em cima do chão
         
         glfw.swap_buffers(window)
         glfw.poll_events()
