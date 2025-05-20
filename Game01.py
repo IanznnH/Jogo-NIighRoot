@@ -213,45 +213,9 @@ def draw_cube(x, y, z, size=1):
     glVertex3f(0.5, 0.5, 0.5)
     glVertex3f(-0.5, 0.5, 0.5)
     
-    
+    glEnd()
+    glPopMatrix()
 
-    glEnd()
-    glPopMatrix()
-    
-def desenhar_mira():
-    glPushAttrib(GL_ALL_ATTRIB_BITS)
-    glDisable(GL_DEPTH_TEST)
-    
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    gluOrtho2D(0, LARGURA, ALTURA, 0)
-    
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    # Mira mais visível
-    tamanho = 10
-    glColor3f(1, 1, 1)  # Amarelo
-    glLineWidth(2)
-    
-    glBegin(GL_LINES)
-    centro_x, centro_y = LARGURA//2, ALTURA//2
-    # Horizontal
-    glVertex2f(centro_x - tamanho, centro_y)
-    glVertex2f(centro_x + tamanho, centro_y)
-    # Vertical
-    glVertex2f(centro_x, centro_y - tamanho)
-    glVertex2f(centro_x, centro_y + tamanho)
-    glEnd()
-    
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
-    glPopAttrib()
-    
 def main():
     global LARGURA, ALTURA
     if not glfw.init():
@@ -308,8 +272,7 @@ def main():
         
         for pos in small_rocks:
             draw_small_rock(pos[0], pos[1])
-            
-        desenhar_mira()
+
         
         glfw.swap_buffers(window)
         glfw.poll_events()
