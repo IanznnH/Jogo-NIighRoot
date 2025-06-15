@@ -5,8 +5,8 @@ import numpy as np
 import random
 import math
 
-# Configurações - use a resolução que realmente vai usar
-LARGURA, ALTURA = 2560, 1440
+# Configurações
+LARGURA, ALTURA = 1280, 720  # Reduzi para uma resolução mais comum
 PLAYER_HEIGHT = 0.5
 VELOCIDADE = 3.0
 SENSIBILIDADE = 0.1
@@ -15,42 +15,57 @@ SENSIBILIDADE = 0.1
 cam_pos = np.array([0.0, PLAYER_HEIGHT, 5.0], dtype=np.float32)
 cam_front = np.array([0.0, 0.0, -1.0], dtype=np.float32)
 cam_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
-yaw, pitch,speed = -90.0, 0.0, 3.0
-ultimo_x, ultimo_y = LARGURA//2, ALTURA//2
-primeiro_mouse = True
-keys = {}
+yaw, pitch = -90.0, 0.0  # Removi variáveis não utilizadas
 
-#variáveis do mouse
-first_mouse = True
-cursor_disabled = False
-esc_pressed = False
-SENSIBILIDADE = 0.1
-last_x = LARGURA / 2
-last_y = ALTURA / 2
+# Controles
+keys = {}
+mouse_first_move = True
+last_x, last_y = LARGURA / 2, ALTURA / 2
 
 def key_callback(window, key, scancode, action, mods):
     global keys
-    
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, True)
+    
+    if action == glfw.PRESS or action == glfw.RELEASE:
+        keys[key] = action == glfw.PRESS
 
-    if key in [glfw.KEY_UP, glfw.KEY_DOWN, glfw.KEY_LEFT, glfw.KEY_RIGHT, 
-               glfw.KEY_W, glfw.KEY_A, glfw.KEY_S, glfw.KEY_D]:
-        if action == glfw.PRESS:
-            keys[key] = True
-        elif action == glfw.RELEASE:
-            keys[key] = False
+def mouse_callback(window, xpos, ypos):
+    global yaw, pitch, mouse_first_move, last_x, last_y, cam_front
+    
+    if mouse_first_move:
+        last_x, last_y = xpos, ypos
+        mouse_first_move = False
+    
+    xoffset = xpos - last_x
+    yoffset = last_y - ypos  # Invertido pois as coordenadas Y vão de baixo para cima
+    last_x, last_y = xpos, ypos
+    
+    xoffset *= SENSIBILIDADE
+    yoffset *= SENSIBILIDADE
+    
+    yaw += xoffset
+    pitch += yoffset
+    
+    # Limita o pitch para evitar flip
+    pitch = max(-89.0, min(89.0, pitch))
+    
+    # Atualiza a direção da câmera
+    front = np.array([
+        math.cos(math.radians(yaw)) * math.cos(math.radians(pitch)),
+        math.sin(math.radians(pitch)),
+        math.sin(math.radians(yaw)) * math.cos(math.radians(pitch))
+    ])
+    cam_front = front / np.linalg.norm(front)
 
 def process_input(window, delta_time):
-    global cam_pos, yaw, pitch
+    global cam_pos
     
-    velocity = speed * delta_time
-    rot_speed = 50 * delta_time  
-    
+    velocity = VELOCIDADE * delta_time
     right = np.cross(cam_front, cam_up)
-    right = right / np.linalg.norm(right)
-    #Movimentação da câmera/WASD
-    move_dir = np.array([0.0, 0.0, 0.0])
+    right /= np.linalg.norm(right)
+    
+    move_dir = np.zeros(3)
     if keys.get(glfw.KEY_W, False):
         move_dir += cam_front * velocity
     if keys.get(glfw.KEY_S, False):
@@ -60,39 +75,8 @@ def process_input(window, delta_time):
     if keys.get(glfw.KEY_D, False):
         move_dir += right * velocity
     
-    cam_pos[0] += move_dir[0]
-    cam_pos[2] += move_dir[2]
-    cam_pos[1] = PLAYER_HEIGHT
-
-def mouse_callback(window, xpos, ypos):
-    global yaw, pitch,last_x, last_y, first_mouse,cam_front, cursor_disabled, SENSIBILIDADE
-    
-    if not  cursor_disabled:
-        return
-    
-    if first_mouse:
-        last_x = xpos
-        last_y = ypos
-        first_mouse = False
-    
-    xoffset = xpos - last_x
-    yoffset = last_y - ypos
-    
-    xoffset *= SENSIBILIDADE
-    yoffset *= SENSIBILIDADE
-    
-    if pitch < 89.0:
-        pitch = 89.0
-    if pitch < -89.0:
-        pitch = -89.0
-        
-    direction = np.array([
-        np.cos(np.radians(yaw)) * np.cos(np.radians(pitch)),
-        np.sin(np.radians(pitch)),
-        np.sin(np.radians(yaw)) * np.cos (np.radians(pitch))
-    ])
-    
-    cam_front = direction / np.linalg.norm(direction)
+    cam_pos += move_dir
+    cam_pos[1] = PLAYER_HEIGHT  # Mantém altura fixa
     
 def draw_ground():
     glColor3f(0.0, 0.2, 0.0)  # verde
@@ -269,13 +253,11 @@ def desenhar_mira():
     glPopAttrib()
     
 def main():
-    global LARGURA, ALTURA
     if not glfw.init():
         print("Erro ao inicializar GLFW")
         return
 
-    glfw.window_hint(glfw.SAMPLES, 4)
-    window = glfw.create_window(LARGURA,ALTURA, "Floresta 3D", None, None)
+    window = glfw.create_window(LARGURA, ALTURA, "Floresta 3D", None, None)
     if not window:
         glfw.terminate()
         print("Erro ao criar janela GLFW")
@@ -284,51 +266,51 @@ def main():
     glfw.make_context_current(window)
     glfw.set_key_callback(window, key_callback)
     glfw.set_cursor_pos_callback(window, mouse_callback)
-    
-    glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)
- 
-    glEnable(GL_DEPTH_TEST)
+    glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_DISABLED)  # Mouse preso e invisível
 
+    glEnable(GL_DEPTH_TEST)
+    
+    # Configuração da projeção
     glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(45, LARGURA/ALTURA, 0.1, 100.0) # Use LARGURA/ALTURA for aspect ratio
+    gluPerspective(45, LARGURA/ALTURA, 0.1, 100.0)
     glMatrixMode(GL_MODELVIEW)
 
     last_time = glfw.get_time()
-
+    
     while not glfw.window_should_close(window):
+        # Delta time
         current_time = glfw.get_time()
         delta_time = current_time - last_time
         last_time = current_time
-
+        
+        # Input
         process_input(window, delta_time)
-
+        
+        # Render
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-
+        
+        # Câmera
         center = cam_pos + cam_front
-        gluLookAt(cam_pos[0], cam_pos[1], cam_pos[2],
-                  center[0], center[1], center[2],
-                  cam_up[0], cam_up[1], cam_up[2])
-
+        gluLookAt(*cam_pos, *center, *cam_up)
+        
+        # Cena
         draw_sky()
         draw_ground()
-
-        # Draw trees
-        random.seed(42)
-        for _ in range(150):
-            x = random.uniform(-20, 20)
-            z = random.uniform(-20, 20)
+        
+        # Árvores
+        random.seed(42)  # Seed fixa para sempre gerar no mesmo lugar
+        for _ in range(50):  # Reduzi o número para melhor performance
+            x, z = random.uniform(-20, 20), random.uniform(-20, 20)
             draw_tree(x, z)
-
-        # Draw rocks
-        small_rocks = generate_small_rocks()
-        for pos in small_rocks:
-            draw_small_rock(pos[0], pos[1])
-
-
+        
+        # Rochas
+        for x, z in generate_small_rocks(200):  # Menos rochas
+            draw_small_rock(x, z)
+        
+        # Mira
         desenhar_mira()
-
+        
         glfw.swap_buffers(window)
         glfw.poll_events()
 
