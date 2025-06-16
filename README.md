@@ -1,5 +1,5 @@
 **Projeto de CG**
-**Quero fazer uma paisagem spirada na estrada da Oak Alley Plantation e Evergreen Plantation**
+**Fazer uma paisagem inspirada na estrada da Oak Alley Plantation e Evergreen Plantation**
 
 **Conceitos de Colisão e Interação.**
 
