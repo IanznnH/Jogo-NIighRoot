@@ -1,0 +1,5 @@
+glfw
+numpy
+PyOpenGL
+PyGLM
+glad
