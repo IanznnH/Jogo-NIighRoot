@@ -309,8 +309,7 @@ def main():
     glEnable(GL_LIGHT0)  # Luz principal (sol)
     glEnable(GL_COLOR_MATERIAL)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
-    
-    
+
     # Configuração da luz do sol
     glLightfv(GL_LIGHT0, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0])
     glLightfv(GL_LIGHT0, GL_DIFFUSE, [2.0, 1.0, 0.8, 1.0]) # Luz difusa amarela 
@@ -318,11 +317,6 @@ def main():
     glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0) # Atenuação constante
     glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0) # Atenuação linear
     glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0) # Atenuação quadrática
-   
-    fence_ambient = [0.24, 0.17, 0.12, 1.0]    # Cor ambiente (mesma cor base)
-    fence_diffuse = [0.24, 0.17, 0.12, 1.0]    # Cor difusa
-    fence_specular = [0.1, 0.1, 0.1, 1.0]      # Reflexão especular (quanto menor, menos brilho)
-    fence_shininess = 10.0   
     
     #Matriz de projeção
     glMatrixMode(GL_PROJECTION)
