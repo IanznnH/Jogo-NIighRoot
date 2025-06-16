@@ -10,7 +10,11 @@ LARGURA, ALTURA = 1280, 720
 PLAYER_HEIGHT = 0.6
 VELOCIDADE = 3.0
 SENSIBILIDADE = 0.1
-NUM_POSTES = 4 # Número de postes com luzes
+NUM_POSTES = 4
+GRAVIDADE = 10 * 0.2 # Ajuste a gravidade para um efeito melhor no jogo
+FORCA_PULO = 1.0
+y_velocity = 0.0
+is_jumping = False# Número de postes com luzes
 
 # Variáveis globais
 cam_pos = np.array([0.0, PLAYER_HEIGHT, 5.0], dtype=np.float32)
@@ -22,10 +26,17 @@ collision_objects = []  # Lista para objetos com colisão
 mouse_first_move = True
 last_x, last_y = LARGURA / 2, ALTURA / 2
 
+
 def key_callback(window, key, scancode, action, mods):
-    global keys
+    global keys, is_jumping, y_velocity # <<< MUDANÇA: Adiciona as variáveis do pulo
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, True)
+
+    if key == glfw.KEY_SPACE and action == glfw.PRESS:
+        if not is_jumping: # Só pode pular se não estiver no ar
+            is_jumping = True
+            y_velocity = FORCA_PULO
+
     if action == glfw.PRESS or action == glfw.RELEASE:
         keys[key] = action == glfw.PRESS
         
@@ -67,7 +78,19 @@ def check_collision(new_pos):
 
 
 def process_input(window, delta_time):
-    global cam_pos
+    global cam_pos, y_velocity, is_jumping 
+
+    if is_jumping:
+        # Aplica a velocidade vertical à posição do jogador
+        cam_pos[1] += y_velocity * delta_time
+        # Aplica a gravidade à velocidade vertical
+        y_velocity -= GRAVIDADE * delta_time
+        
+        if cam_pos[1] <= PLAYER_HEIGHT:
+            cam_pos[1] = PLAYER_HEIGHT
+            is_jumping = False
+            y_velocity = 0
+
     velocity = VELOCIDADE * delta_time
     right = np.cross(cam_front, cam_up)
     right /= np.linalg.norm(right)
@@ -81,7 +104,8 @@ def process_input(window, delta_time):
         move_dir -= right
     if keys.get(glfw.KEY_D, False):
         move_dir += right
-  
+
+    move_dir[1] = 0
     if np.linalg.norm(move_dir) > 0:
         move_dir = move_dir / np.linalg.norm(move_dir)
         
@@ -89,22 +113,20 @@ def process_input(window, delta_time):
     
     new_pos = cam_pos + move_dir
 
-    if not check_collision(new_pos):
-        cam_pos = new_pos
+    temp_pos_for_collision = np.array([new_pos[0], PLAYER_HEIGHT, new_pos[2]])
+
+    if not check_collision(temp_pos_for_collision):
+        cam_pos[0] = new_pos[0]
+        cam_pos[2] = new_pos[2]
     else:
-        # Se colidir, tenta mover apenas no eixo X e Z separadamente (para "deslizar" nas paredes)
-        # Tenta mover apenas no eixo X
+        # Lógica de deslizar (sliding)
         new_pos_x = np.array([new_pos[0], cam_pos[1], cam_pos[2]])
-        if not check_collision(new_pos_x):
+        if not check_collision(np.array([new_pos_x[0], PLAYER_HEIGHT, new_pos_x[2]])):
             cam_pos[0] = new_pos_x[0]
 
-        # Tenta mover apenas no eixo Z
         new_pos_z = np.array([cam_pos[0], cam_pos[1], new_pos[2]])
-        if not check_collision(new_pos_z):
+        if not check_collision(np.array([new_pos_z[0], PLAYER_HEIGHT, new_pos_z[2]])):
             cam_pos[2] = new_pos_z[2]
-            
-    # Garante que o jogador permaneça na altura correta
-    cam_pos[1] = PLAYER_HEIGHT
 
 def setup_collision_objects():
     global collision_objects
@@ -118,10 +140,10 @@ def setup_collision_objects():
     while z < road_length/2:
         # Cerca da esquerda
         x_left = -road_width/2 - 0.2
-        collision_objects.append({'pos': (x_left, 0.5/2, z), 'size': (0.05, 0.5, 1.0)})
+        collision_objects.append({'pos': (x_left, 0.5/2, z), 'size': (0.05, 0.5, 0.0)})
         # Cerca da direita
         x_right = road_width/2 + 0.2
-        collision_objects.append({'pos': (x_right, 0.5/2, z), 'size': (0.05, 0.5, 1.0)})
+        collision_objects.append({'pos': (x_right, 0.5/2, z), 'size': (0.05, 0.5, 0.0)})
         z += spacing
         
     # 2. Adicionar árvores à lista de colisão
