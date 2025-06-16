@@ -10,7 +10,6 @@ LARGURA, ALTURA = 1280, 720
 PLAYER_HEIGHT = 0.6
 VELOCIDADE = 3.0
 SENSIBILIDADE = 0.1
-NUM_POSTES = 4
 GRAVIDADE = 10 * 0.2 # Ajuste a gravidade para um efeito melhor no jogo
 FORCA_PULO = 1.0
 y_velocity = 0.0
@@ -23,6 +22,8 @@ cam_up = np.array([0.0, 1.0, 0.0], dtype=np.float32)
 yaw, pitch = -90.0, 0.0
 keys = {}
 collision_objects = []  # Lista para objetos com colisão
+tree_positions = []
+rock_positions = []# Lista para posições de árvores
 mouse_first_move = True
 last_x, last_y = LARGURA / 2, ALTURA / 2
 
@@ -119,7 +120,6 @@ def process_input(window, delta_time):
         cam_pos[0] = new_pos[0]
         cam_pos[2] = new_pos[2]
     else:
-        # Lógica de deslizar (sliding)
         new_pos_x = np.array([new_pos[0], cam_pos[1], cam_pos[2]])
         if not check_collision(np.array([new_pos_x[0], PLAYER_HEIGHT, new_pos_x[2]])):
             cam_pos[0] = new_pos_x[0]
@@ -147,17 +147,13 @@ def setup_collision_objects():
         z += spacing
         
     # 2. Adicionar árvores à lista de colisão
-    random.seed(42) # Garante que as árvores estejam sempre no mesmo lugar
-    for _ in range(100):
-        x, z = random.uniform(-20, 20), random.uniform(-20, 20)
-        if abs(x) > 2.5 or abs(z) > 20:
-             # Adiciona o tronco da árvore como um objeto de colisão
-            trunk_height = 1.0
-            trunk_width = 0.2
-            collision_objects.append({
-                'pos': (x, trunk_height / 2, z),
-                'size': (trunk_width, trunk_height, trunk_width)
-            })
+    trunk_height = 1.0
+    trunk_width = 0.2
+    for x, z in tree_positions:
+        collision_objects.append({
+            'pos': (x, trunk_height / 2, z),
+            'size': (trunk_width, trunk_height, trunk_width)
+        })
 
 def draw_small_fence(x, z, height=0.5, width=0.05, spacing=1.0):
     glDisable(GL_LIGHTING)
@@ -197,7 +193,7 @@ def draw_ground():
     glVertex3f(25, 0, 25)
     glVertex3f(25, 0, -25)
     glEnd()
-
+    
 def draw_small_rock(x=0, z=0):
     glPushMatrix()
     glTranslatef(x, 0, z)
@@ -205,10 +201,40 @@ def draw_small_rock(x=0, z=0):
     glColor3f(0.41, 0.41, 0.41)
     draw_cube(0, 0, 0)
     glPopMatrix()
+    
+def generate_static_rock_positions(count=400, spread=22):
+    global rock_positions
+    rock_positions = []  # Limpa a lista para garantir
+    random.seed(43) # Usamos uma "seed" para que a aleatoriedade seja sempre a mesma
+    
+    for _ in range(count):
+        # Gera uma posição aleatória
+        x = random.uniform(-spread, spread)
+        z = random.uniform(-spread, spread)
+        
+        # Adiciona a pedra na lista apenas se ela NÃO estiver no caminho principal
+        if abs(x) > 2.5:
+            rock_positions.append((x, z))
 
-def generate_small_rocks(count=500, spread=20):
-    return [(random.uniform(-spread, spread), random.uniform(-spread, spread)) for _ in range(count)]
+def generate_tree_positions(road_width=3.0, road_length=50.0, spacing=5.0):
+    global tree_positions
+    tree_positions = []
+    random.seed(42) # Garante que as árvores estejam sempre no mesmo lugar
 
+    z = -road_length / 2
+    while z < road_length / 2:
+        # Adiciona uma variação na posição Z para não parecer uma grade perfeita
+        random_z_offset = random.uniform(-spacing / 3, spacing / 3)
+        current_z = z + random_z_offset
+        
+        x_right = road_width / 5 + 2.0 + random.uniform(0.0, 1.5)
+        tree_positions.append((x_right, current_z))
+        # Lado esquerdo
+        x_left = -road_width / 5 - 2.0 - random.uniform(0.0, 1.5)
+        tree_positions.append((x_left, current_z))
+        
+        z += spacing
+        
 def draw_tree(x=0, z=0):
     trunk_height = 1.0
     trunk_width = 0.2
@@ -227,9 +253,9 @@ def draw_tree(x=0, z=0):
         glScalef(layer_size, 0.5, layer_size)
         draw_cube(0, 0, 0)
         glPopMatrix()
-               
-def draw_asphalt(width=5.0, length=50.0): 
-    glColor3f(0.05, 0.05, 0.05)
+                       
+def draw_chao(width=5.0, length=50.0): 
+    glColor3f(0.22, 0.36, 0.28)
     glBegin(GL_QUADS)
     glNormal3f(0, 1, 0)
     glVertex3f(-width/2, 0.01, -length/2)
@@ -237,21 +263,6 @@ def draw_asphalt(width=5.0, length=50.0):
     glVertex3f(width/2, 0.01, length/2)
     glVertex3f(width/2, 0.01, -length/2)
     glEnd()
-    
-    stripe_width = 0.2
-    stripe_length = 2.0
-    gap_length = 4.0
-    glColor3f(1.0, 0.9, 0.0)
-    
-    z = -length/2
-    while z < length/2:
-        glBegin(GL_QUADS)
-        glVertex3f(-stripe_width/2, 0.02, z)
-        glVertex3f(-stripe_width/2, 0.02, z + stripe_length)
-        glVertex3f(stripe_width/2, 0.02, z + stripe_length)
-        glVertex3f(stripe_width/2, 0.02, z)
-        glEnd()
-        z += stripe_length + gap_length
         
 def draw_sky():
     glDisable(GL_LIGHTING)
@@ -329,7 +340,7 @@ def main():
     glEnable(GL_COLOR_MATERIAL)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0])
+    glLightfv(GL_LIGHT0, GL_AMBIENT, [0.8, 0.2, 0.2, 1.0])
     glLightfv(GL_LIGHT0, GL_DIFFUSE, [2.0, 1.0, 0.8, 1.0])
     glLightfv(GL_LIGHT0, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0])
     glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0)
@@ -341,6 +352,9 @@ def main():
     glMatrixMode(GL_MODELVIEW)
 
     last_time = glfw.get_time()
+    
+    generate_tree_positions(spacing=2.5)
+    generate_static_rock_positions()
 
     try:
         while not glfw.window_should_close(window):
@@ -362,18 +376,15 @@ def main():
             draw_sky()
             draw_sun()
             draw_ground()
-            draw_asphalt(width=3.0, length=50.0)
+            draw_chao(width=3.0, length=50.0)
             draw_fences_along_road(road_width=3.0, road_length=50.0, spacing=1.0)
 
-            random.seed(42)
-            for _ in range(100):
-                x, z = random.uniform(-20, 20), random.uniform(-20, 20)
-                if abs(x) > 2.5 or abs(z) > 20:
-                    draw_tree(x, z)
+            for x, z in tree_positions:
+                draw_tree(x, z)
             
-            for x, z in generate_small_rocks(400, spread=22):
-                if abs(x) > 2.5:
-                    draw_small_rock(x, z)
+            # <<< MUDANÇA: Altere o loop de desenho das pedras para isto: >>>
+            for x, z in rock_positions:
+                draw_small_rock(x, z)
             
             glfw.swap_buffers(window)
             glfw.poll_events()
