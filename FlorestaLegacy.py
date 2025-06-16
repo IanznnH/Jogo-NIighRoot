@@ -108,10 +108,52 @@ def draw_tree(x=0, z=0):
         glScalef(layer_size, 0.5, layer_size)
         draw_cube(0, 0, 0)  # draw_cube deve ter normais para iluminação
         glPopMatrix()
-        
-def draw_asphalt(width=5.0, length=50.0):  # Removi stone_density pois não é mais necessário
+def draw_small_fence(x, z, height=0.5, width=0.05):
+    glDisable(GL_LIGHTING)
+    glPushMatrix()
+    glTranslatef(x, height/2, z)
+    glScalef(width, height, width)
+    glColor3f(0.24, 0.17, 0.12)  # Cor madeira
+    draw_cube(0, 0, 0)
+    glPopMatrix()
+    # Barra horizontal
+    glPushMatrix()
+    glTranslatef(x, height*0.2, z)
+    glScalef(width, width, width*20)
+    glColor3f(0.24, 0.17, 0.12)  # Cor madeira mais escura
+    draw_cube(0, 0, 0)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(x, height*0.5, z)
+    glScalef(width, width, width*20)
+    glColor3f(0.24, 0.17, 0.12)  # Cor madeira mais escura
+    draw_cube(0, 0, 0)
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(x, height*0.8, z)
+    glScalef(width, width, width*20)
+    glColor3f(0.24, 0.17, 0.12)
+    draw_cube(0, 0, 0)
+    glPopMatrix()
+    glEnable(GL_LIGHTING)  # Reativar iluminação
+
+def draw_fences_along_road(road_width=5.0, road_length=50.0, spacing=3.0):
+    z = -road_length/2
+    while z < road_length/2:
+        draw_small_fence(-road_width/2 - 0.3, z)
+        z += spacing
+    
+    # Lado direito da estrada
+    z = -road_length/2
+    while z < road_length/2:
+        draw_small_fence(road_width/2 + 0.3, z)
+        z += spacing
+               
+def draw_asphalt(width=5.0, length=50.0): 
     # Desenha o asfalto (base preta)
-    glColor3f(0.1, 0.1, 0.1)  # Cor preta para o asfalto
+    glColor3f(0.05, 0.05, 0.05)  # Cor preta para o asfalto
     glBegin(GL_QUADS)
     glNormal3f(0, 1, 0)
     glVertex3f(-width/2, 0.01, -length/2)
@@ -120,7 +162,7 @@ def draw_asphalt(width=5.0, length=50.0):  # Removi stone_density pois não é m
     glVertex3f(width/2, 0.01, -length/2)
     glEnd()
     
-    # Desenha as listras amarelas no meio
+    #Listras amarelas no meio
     stripe_width = 0.2
     stripe_length = 2.0
     gap_length = 4.0
@@ -137,26 +179,23 @@ def draw_asphalt(width=5.0, length=50.0):  # Removi stone_density pois não é m
         z += stripe_length + gap_length
         
 def draw_sky():
-    glDisable(GL_LIGHTING)  # Skybox geralmente não tem iluminação
-    glDisable(GL_DEPTH_TEST)  # Desativar teste de profundidade para desenhar atrás de tudo
+    glDisable(GL_LIGHTING) #Desativar iluminação do ceu
+    glDisable(GL_DEPTH_TEST)  # Desativar
     glPushMatrix()
-    glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])  # Manter skybox centrado na câmera
+    glTranslatef(cam_pos[0], cam_pos[1], cam_pos[2])
     size = 10
     glBegin(GL_QUADS)
-    glColor3f(0.1, 0.1, 0.44)  # Azul escuro para o céu
-    
+    glColor3f(0.1, 0.1, 0.44)  # Azul
     # Frente 
     glVertex3f(-size, -size, -size)
     glVertex3f(size, -size, -size)
     glVertex3f(size, size, -size)
     glVertex3f(-size, size, -size)
-    
     # Trás 
     glVertex3f(-size, -size, size)
     glVertex3f(size, -size, size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
-    
     # Esquerda 
     glVertex3f(-size, -size, -size)
     glVertex3f(-size, -size, size)
@@ -172,53 +211,47 @@ def draw_sky():
     glVertex3f(size, size, -size)
     glVertex3f(size, size, size)
     glVertex3f(-size, size, size)
-    
+ 
     glEnd()
     glPopMatrix()
     glEnable(GL_DEPTH_TEST)
-    glEnable(GL_LIGHTING)  # Reativar iluminação para o resto da cena
+    glEnable(GL_LIGHTING)  # Reativa iluminação 
 
 def draw_cube(x, y, z, size=1):
     glPushMatrix()
     glTranslatef(x, y, z)
     glScalef(size, size, size)
-    glBegin(GL_QUADS)
-    
+    glBegin(GL_QUADS)   
     # Face frontal
     glNormal3f(0.0, 0.0, 1.0)
     glVertex3f(-0.5, -0.5, 0.5)
     glVertex3f(0.5, -0.5, 0.5)
     glVertex3f(0.5, 0.5, 0.5)
-    glVertex3f(-0.5, 0.5, 0.5)
-    
+    glVertex3f(-0.5, 0.5, 0.5)  
     # Face traseira
     glNormal3f(0.0, 0.0, -1.0)
     glVertex3f(-0.5, -0.5, -0.5)
     glVertex3f(0.5, -0.5, -0.5)
     glVertex3f(0.5, 0.5, -0.5)
-    glVertex3f(-0.5, 0.5, -0.5)
-    
+    glVertex3f(-0.5, 0.5, -0.5)   
     # Face esquerdA
     glNormal3f(-1.0, 0.0, 0.0)
     glVertex3f(-0.5, -0.5, -0.5)
     glVertex3f(-0.5, -0.5, 0.5)
     glVertex3f(-0.5, 0.5, 0.5)
-    glVertex3f(-0.5, 0.5, -0.5)
-    
+    glVertex3f(-0.5, 0.5, -0.5) 
     # Face direita 
     glNormal3f(1.0, 0.0, 0.0)
     glVertex3f(0.5, -0.5, -0.5)
     glVertex3f(0.5, -0.5, 0.5)
     glVertex3f(0.5, 0.5, 0.5)
-    glVertex3f(0.5, 0.5, -0.5)
-    
+    glVertex3f(0.5, 0.5, -0.5)  
     # Face superior
     glNormal3f(0.0, 1.0, 0.0)
     glVertex3f(-0.5, 0.5, -0.5)
     glVertex3f(0.5, 0.5, -0.5)
     glVertex3f(0.5, 0.5, 0.5)
     glVertex3f(-0.5, 0.5, 0.5)
-    
     # Face inferior
     glNormal3f(0.0, -1.0, 0.0)
     glVertex3f(-0.5, -0.5, -0.5)
@@ -277,14 +310,20 @@ def main():
     glEnable(GL_COLOR_MATERIAL)
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
     
+    
     # Configuração da luz do sol
     glLightfv(GL_LIGHT0, GL_AMBIENT, [0.2, 0.2, 0.2, 1.0])
     glLightfv(GL_LIGHT0, GL_DIFFUSE, [2.0, 1.0, 0.8, 1.0]) # Luz difusa amarela 
-    glLightfv(GL_LIGHT0, GL_SPECULAR, [2.0, 1.0, 0.9, 1.0]) # Luz especular amarela
+    glLightfv(GL_LIGHT0, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0]) # Luz especular amarela
     glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0) # Atenuação constante
     glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.0) # Atenuação linear
     glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.0) # Atenuação quadrática
-
+   
+    fence_ambient = [0.24, 0.17, 0.12, 1.0]    # Cor ambiente (mesma cor base)
+    fence_diffuse = [0.24, 0.17, 0.12, 1.0]    # Cor difusa
+    fence_specular = [0.1, 0.1, 0.1, 1.0]      # Reflexão especular (quanto menor, menos brilho)
+    fence_shininess = 10.0   
+    
     #Matriz de projeção
     glMatrixMode(GL_PROJECTION)
     gluPerspective(45, LARGURA / ALTURA, 0.1, 100.0)
@@ -316,6 +355,7 @@ def main():
 
             draw_ground()
             draw_asphalt(width=3.0, length=50.0)  
+            draw_fences_along_road(road_width=3.0, road_length=50.0, spacing=1.0)
 
             random.seed(42)
             for _ in range(100):  
