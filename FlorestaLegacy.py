@@ -311,7 +311,7 @@ def main():
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 1)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_ANY_PROFILE)
     
-    window = glfw.create_window(LARGURA, ALTURA, "Floresta com Pedras", None, None)
+    window = glfw.create_window(LARGURA, ALTURA, "Alone", None, None)
     if not window:
         glfw.terminate()
         print("Erro ao criar janela GLFW")
