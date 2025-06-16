@@ -5,15 +5,15 @@ import numpy as np
 import random
 import math
 
-# Constantes para largura da janela, altura, altura do jogador, velocidade e sensibilidade do mouse
+#Largura da janela, altura, altura do jogador, velocidade e sensibilidade do mouse
 LARGURA, ALTURA = 1280, 720
 PLAYER_HEIGHT = 0.6
 VELOCIDADE = 3.0
 SENSIBILIDADE = 0.1
-GRAVIDADE = 10 * 0.2 # Ajuste a gravidade para um efeito melhor no jogo
+GRAVIDADE = 10 * 0.2 # Gravidade 
 FORCA_PULO = 1.0
 y_velocity = 0.0
-is_jumping = False# Número de postes com luzes
+is_jumping = False
 
 # Variáveis globais
 cam_pos = np.array([0.0, PLAYER_HEIGHT, 5.0], dtype=np.float32)
@@ -29,16 +29,16 @@ last_x, last_y = LARGURA / 2, ALTURA / 2
 
 
 def key_callback(window, key, scancode, action, mods):
-    global keys, is_jumping, y_velocity # <<< MUDANÇA: Adiciona as variáveis do pulo
+    global keys, is_jumping, y_velocity
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, True)
 
     if key == glfw.KEY_SPACE and action == glfw.PRESS:
-        if not is_jumping: # Só pode pular se não estiver no ar
+        if not is_jumping: # Para evitar o pulo duas vezes
             is_jumping = True
             y_velocity = FORCA_PULO
 
-    if action == glfw.PRESS or action == glfw.RELEASE:
+    if action == glfw.PRESS or action == glfw.RELEASE:# Atualiza o estado da tecla
         keys[key] = action == glfw.PRESS
         
 def mouse_callback(window, xpos, ypos):
@@ -105,21 +105,17 @@ def process_input(window, delta_time):
         move_dir -= right
     if keys.get(glfw.KEY_D, False):
         move_dir += right
-
-    move_dir[1] = 0
-    if np.linalg.norm(move_dir) > 0:
-        move_dir = move_dir / np.linalg.norm(move_dir)
         
     move_dir *= velocity
     
     new_pos = cam_pos + move_dir
 
     temp_pos_for_collision = np.array([new_pos[0], PLAYER_HEIGHT, new_pos[2]])
-
+# Verifica colisão com a nova posição
     if not check_collision(temp_pos_for_collision):
         cam_pos[0] = new_pos[0]
         cam_pos[2] = new_pos[2]
-    else:
+    else:# Se houver colisão, tenta ajustar a posição
         new_pos_x = np.array([new_pos[0], cam_pos[1], cam_pos[2]])
         if not check_collision(np.array([new_pos_x[0], PLAYER_HEIGHT, new_pos_x[2]])):
             cam_pos[0] = new_pos_x[0]
@@ -127,12 +123,12 @@ def process_input(window, delta_time):
         new_pos_z = np.array([cam_pos[0], cam_pos[1], new_pos[2]])
         if not check_collision(np.array([new_pos_z[0], PLAYER_HEIGHT, new_pos_z[2]])):
             cam_pos[2] = new_pos_z[2]
-
+# Função para configurar os objetos de colisão
 def setup_collision_objects():
     global collision_objects
-    collision_objects = [] # Limpa a lista para o frame atual
+    collision_objects = []
 
-    # 1. Adicionar cercas à lista de colisão
+    #Adicionacercas à lista de colisão
     road_width=3.0
     road_length=50.0
     spacing=1.0
@@ -146,7 +142,7 @@ def setup_collision_objects():
         collision_objects.append({'pos': (x_right, 0.5/2, z), 'size': (0.05, 0.5, 0.0)})
         z += spacing
         
-    # 2. Adicionar árvores à lista de colisão
+    #Adiciona árvores à lista de colisão
     trunk_height = 1.0
     trunk_width = 0.2
     for x, z in tree_positions:
@@ -154,7 +150,7 @@ def setup_collision_objects():
             'pos': (x, trunk_height / 2, z),
             'size': (trunk_width, trunk_height, trunk_width)
         })
-
+#Adiciona as pedras à lista de colisão
 def draw_small_fence(x, z, height=0.5, width=0.05, spacing=1.0):
     glDisable(GL_LIGHTING)
     # Desenha o poste vertical
@@ -176,14 +172,14 @@ def draw_small_fence(x, z, height=0.5, width=0.05, spacing=1.0):
         glPopMatrix()
     
     glEnable(GL_LIGHTING)
-
+# Função para desenhar cercas ao longo da estrada
 def draw_fences_along_road(road_width=3.0, road_length=50.0, spacing=1.0):
     z = -road_length/2
     while z < road_length/2:
         draw_small_fence(-road_width/2 - 0.3, z, spacing=spacing)
         draw_small_fence(road_width/2 + 0.3, z, spacing=spacing)
         z += spacing
-        
+# Função para desenhar o chão        
 def draw_ground():
     glColor3f(0.0, 0.2, 0.0)
     glBegin(GL_QUADS)
@@ -193,7 +189,7 @@ def draw_ground():
     glVertex3f(25, 0, 25)
     glVertex3f(25, 0, -25)
     glEnd()
-    
+# Função para desenhar uma pequena pedra    
 def draw_small_rock(x=0, z=0):
     glPushMatrix()
     glTranslatef(x, 0, z)
@@ -201,7 +197,7 @@ def draw_small_rock(x=0, z=0):
     glColor3f(0.41, 0.41, 0.41)
     draw_cube(0, 0, 0)
     glPopMatrix()
-    
+# Função para gerar posições de pedras estáticas   
 def generate_static_rock_positions(count=400, spread=22):
     global rock_positions
     rock_positions = []  # Limpa a lista para garantir
@@ -215,18 +211,17 @@ def generate_static_rock_positions(count=400, spread=22):
         # Adiciona a pedra na lista apenas se ela NÃO estiver no caminho principal
         if abs(x) > 2.5:
             rock_positions.append((x, z))
-
+# Função para gerar posições de árvores ao longo da estrada
 def generate_tree_positions(road_width=3.0, road_length=50.0, spacing=5.0):
     global tree_positions
     tree_positions = []
-    random.seed(42) # Garante que as árvores estejam sempre no mesmo lugar
+    random.seed(42) 
 
     z = -road_length / 2
     while z < road_length / 2:
-        # Adiciona uma variação na posição Z para não parecer uma grade perfeita
         random_z_offset = random.uniform(-spacing / 3, spacing / 3)
         current_z = z + random_z_offset
-        
+        # Lado direito
         x_right = road_width / 5 + 2.0 + random.uniform(0.0, 1.5)
         tree_positions.append((x_right, current_z))
         # Lado esquerdo
@@ -253,7 +248,7 @@ def draw_tree(x=0, z=0):
         glScalef(layer_size, 0.5, layer_size)
         draw_cube(0, 0, 0)
         glPopMatrix()
-                       
+# Função o chão verde                       
 def draw_chao(width=5.0, length=50.0): 
     glColor3f(0.22, 0.36, 0.28)
     glBegin(GL_QUADS)
@@ -263,7 +258,7 @@ def draw_chao(width=5.0, length=50.0):
     glVertex3f(width/2, 0.01, length/2)
     glVertex3f(width/2, 0.01, -length/2)
     glEnd()
-        
+# Função para desenhar o céu        
 def draw_sky():
     glDisable(GL_LIGHTING)
     glDisable(GL_DEPTH_TEST)
@@ -272,16 +267,17 @@ def draw_sky():
     size = 10
     glBegin(GL_QUADS)
     glColor3f(0.1, 0.1, 0.44)
-    glVertex3f(-size, -size, -size); glVertex3f(size, -size, -size); glVertex3f(size, size, -size); glVertex3f(-size, size, -size)
-    glVertex3f(-size, -size, size); glVertex3f(size, -size, size); glVertex3f(size, size, size); glVertex3f(-size, size, size)
-    glVertex3f(-size, -size, -size); glVertex3f(-size, -size, size); glVertex3f(-size, size, size); glVertex3f(-size, size, -size)
-    glVertex3f(size, -size, -size); glVertex3f(size, -size, size); glVertex3f(size, size, size); glVertex3f(size, size, -size)
-    glVertex3f(-size, size, -size); glVertex3f(size, size, -size); glVertex3f(size, size, size); glVertex3f(-size, size, size)
+    glVertex3f(-size, -size, -size); glVertex3f(size, -size, -size); glVertex3f(size, size, -size); glVertex3f(-size, size, -size) # Fundo
+    glVertex3f(-size, -size, size); glVertex3f(size, -size, size); glVertex3f(size, size, size); glVertex3f(-size, size, size) # Frente
+    glVertex3f(-size, -size, -size); glVertex3f(-size, -size, size); glVertex3f(-size, size, size); glVertex3f(-size, size, -size) # Esquerda 
+    glVertex3f(size, -size, -size); glVertex3f(size, -size, size); glVertex3f(size, size, size); glVertex3f(size, size, -size) # Direita
+    glVertex3f(-size, size, -size); glVertex3f(size, size, -size); glVertex3f(size, size, size); glVertex3f(-size, size, size) # Cima
     glEnd()
     glPopMatrix()
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
-
+    
+# Função para desenhar um cubo
 def draw_cube(x, y, z, size=1):
     glPushMatrix()
     glTranslatef(x, y, z)
@@ -295,7 +291,7 @@ def draw_cube(x, y, z, size=1):
     glNormal3f(0.0, -1.0, 0.0); glVertex3f(-0.5, -0.5, -0.5); glVertex3f(0.5, -0.5, -0.5); glVertex3f(0.5, -0.5, 0.5); glVertex3f(-0.5, -0.5, 0.5)
     glEnd()
     glPopMatrix()
-
+# Função para desenhar o sol
 def draw_sun():
     glDisable(GL_LIGHTING)
     glPushMatrix()
@@ -382,7 +378,6 @@ def main():
             for x, z in tree_positions:
                 draw_tree(x, z)
             
-            # <<< MUDANÇA: Altere o loop de desenho das pedras para isto: >>>
             for x, z in rock_positions:
                 draw_small_rock(x, z)
             
