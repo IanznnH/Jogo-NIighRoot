@@ -1,5 +1,5 @@
 **Projeto de CG**
-**Quero fazer uma paisagem baseada em província de Chiang Mai, Tailândia.**
+**Quero fazer uma paisagem spirada na estrada da Oak Alley Plantation e Evergreen Plantation**
 **Distrito de Hot**
 
 **Conceitos de Colisão e Interação.**
